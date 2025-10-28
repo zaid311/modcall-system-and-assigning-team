@@ -1,0 +1,95 @@
+-- NOTE: you can change the ticket names to whatever your self heck in gui got thansk for using my script 
+-- made by; hibyehibye048
+-- Self Check-In System (ServerScriptService)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Create folder structure
+local RYRFolder = ReplicatedStorage:FindFirstChild("RYR")
+if not RYRFolder then
+	RYRFolder = Instance.new("Folder")
+	RYRFolder.Name = "RYR"
+	RYRFolder.Parent = ReplicatedStorage
+end
+
+local checkInFolder = RYRFolder:FindFirstChild("SelfCheckIn")
+if not checkInFolder then
+	checkInFolder = Instance.new("Folder")
+	checkInFolder.Name = "SelfCheckIn"
+	checkInFolder.Parent = RYRFolder
+end
+
+-- Create RemoteEvents
+local checkFlexEvent = Instance.new("RemoteEvent")
+checkFlexEvent.Name = "CheckFlex"
+checkFlexEvent.Parent = checkInFolder
+
+local checkCorpEvent = Instance.new("RemoteEvent")
+checkCorpEvent.Name = "CheckCorp"
+checkCorpEvent.Parent = checkInFolder
+
+local giveTicketOEvent = Instance.new("RemoteEvent")
+giveTicketOEvent.Name = "GiveTicketO"
+giveTicketOEvent.Parent = checkInFolder
+
+-- Function to give ticket
+local function giveTicket(player, ticketType)
+	-- Check if player is staff
+	local storedRole = player:FindFirstChild("SelectedRole")
+	if storedRole and storedRole.Value ~= "" then
+		-- Player is staff, deny check-in
+		local msg = Instance.new("Message")
+		msg.Text = "Attend flights to get promoted!"
+		msg.Parent = player.PlayerGui
+		task.wait(3)
+		msg:Destroy()
+		return
+	end
+	
+	-- Give ticket
+	local ticket = Instance.new("Tool")
+	ticket.Name = ticketType
+	ticket.CanBeDropped = false
+	
+	-- Create ticket handle
+	local handle = Instance.new("Part")
+	handle.Name = "Handle"
+	handle.Size = Vector3.new(1, 0.1, 1.5)
+	
+	-- Different colors for different tickets
+	if ticketType == "FLEXI PLUS Ticket" then
+		handle.BrickColor = BrickColor.new("Bright blue")
+	elseif ticketType == "CORPORATE Ticket" then
+		handle.BrickColor = BrickColor.new("Really red")
+	else
+		handle.BrickColor = BrickColor.new("White")
+	end
+	
+	handle.Parent = ticket
+	ticket.Parent = player.Backpack
+	
+	print("Gave " .. ticketType .. " to " .. player.Name)
+end
+
+-- Handle button clicks
+checkFlexEvent.OnServerEvent:Connect(function(player, gui)
+	giveTicket(player, "FLEXI PLUS Ticket")
+	if gui then
+		gui.Enabled = false
+	end
+end)
+
+checkCorpEvent.OnServerEvent:Connect(function(player, gui)
+	giveTicket(player, "CORPORATE Ticket")
+	if gui then
+		gui.Enabled = false
+	end
+end)
+
+giveTicketOEvent.OnServerEvent:Connect(function(player, gui)
+	giveTicket(player, "ECONOMY Ticket")
+	if gui then
+		gui.Enabled = false
+	end
+end)
