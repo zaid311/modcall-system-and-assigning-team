@@ -1,0 +1,352 @@
+-- NOTE:this is a gui that is for example you may change the roles or teams you want them to be in your game thanks for using this gui
+-- made by: hibyehibye048
+
+-- Place this in StarterGui as a LocalScript inside a ScreenGui
+
+local player = game.Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Get the ScreenGui that this script is inside of
+local screenGui = script.Parent
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Check if player already has a selected role (don't show GUI again)
+local storedRole = player:FindFirstChild("SelectedRole")
+if storedRole and storedRole.Value ~= "" then
+	print("Player already selected role: " .. storedRole.Value .. ", hiding GUI")
+	screenGui.Enabled = false
+	return
+end
+
+-- Authorized users for restricted roles
+local authorizedUsers = {
+	["Msh82016"] = true,
+	["hibyehibye048"] = true,
+	["woodisd2"] = true
+}
+
+-- Make sure ScreenGui doesn't reset on spawn
+screenGui.ResetOnSpawn = false
+
+-- Blur effect for background
+local blur = Instance.new("BlurEffect")
+blur.Size = 24
+blur.Parent = game.Lighting
+
+-- Create Frame container for main menu buttons
+local menuFrame = Instance.new("Frame")
+menuFrame.Name = "MenuFrame"
+menuFrame.Size = UDim2.new(0, 300, 0, 300)
+menuFrame.Position = UDim2.new(0.5, -150, 0.5, -150)
+menuFrame.BackgroundTransparency = 1
+menuFrame.Parent = screenGui
+
+-- Create Frame for team selection (hidden initially)
+local teamFrame = Instance.new("Frame")
+teamFrame.Name = "TeamFrame"
+teamFrame.Size = UDim2.new(0, 720, 0, 600)
+teamFrame.Position = UDim2.new(0.5, -360, 0.5, -300)
+teamFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+teamFrame.BackgroundTransparency = 0.3
+teamFrame.BorderSizePixel = 0
+teamFrame.Visible = false
+teamFrame.Parent = screenGui
+
+local teamFrameCorner = Instance.new("UICorner")
+teamFrameCorner.CornerRadius = UDim.new(0, 15)
+teamFrameCorner.Parent = teamFrame
+
+-- Team Selection Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, -40, 0, 50)
+titleLabel.Position = UDim2.new(0, 20, 0, 20)
+titleLabel.BackgroundColor3 = Color3.fromRGB(41, 171, 226)
+titleLabel.BorderSizePixel = 0
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "Team Selection"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 28
+titleLabel.TextStrokeTransparency = 0.5
+titleLabel.Parent = teamFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = titleLabel
+
+-- Scrolling Frame for team cards
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Name = "ScrollFrame"
+scrollFrame.Size = UDim2.new(1, -40, 1, -100)
+scrollFrame.Position = UDim2.new(0, 20, 0, 80)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 10
+scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(41, 171, 226)
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollFrame.Parent = teamFrame
+
+-- Grid layout for organizing cards
+local gridLayout = Instance.new("UIGridLayout")
+gridLayout.CellSize = UDim2.new(0, 210, 0, 260)
+gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+gridLayout.Parent = scrollFrame
+
+-- Create RemoteEvent for team assignment (if it doesn't exist)
+local teamEvent = ReplicatedStorage:FindFirstChild("AssignTeam")
+if not teamEvent then
+	teamEvent = Instance.new("RemoteEvent")
+	teamEvent.Name = "AssignTeam"
+	teamEvent.Parent = ReplicatedStorage
+end
+
+-- Function to create a team card
+local function createTeamCard(name, teamText, teamName, imageId, layoutOrder)
+	local card = Instance.new("Frame")
+	card.Name = name
+	card.Size = UDim2.new(0, 200, 0, 250)
+	card.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+	card.BorderSizePixel = 2
+	card.BorderColor3 = Color3.fromRGB(41, 171, 226)
+	card.LayoutOrder = layoutOrder or 0
+	card.Parent = scrollFrame
+
+	local cardCorner = Instance.new("UICorner")
+	cardCorner.CornerRadius = UDim.new(0, 10)
+	cardCorner.Parent = card
+
+	-- Team name label
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, -10, 0, 40)
+	nameLabel.Position = UDim2.new(0, 5, 0, 5)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Text = teamText
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nameLabel.TextSize = 16
+	nameLabel.TextWrapped = true
+	nameLabel.TextStrokeTransparency = 0.7
+	nameLabel.Parent = card
+
+	-- Image container
+	local imageFrame = Instance.new("Frame")
+	imageFrame.Size = UDim2.new(0, 150, 0, 150)
+	imageFrame.Position = UDim2.new(0.5, -75, 0, 50)
+	imageFrame.BackgroundColor3 = Color3.fromRGB(41, 171, 226)
+	imageFrame.BorderSizePixel = 0
+	imageFrame.Parent = card
+
+	local imageCorner = Instance.new("UICorner")
+	imageCorner.CornerRadius = UDim.new(1, 0)
+	imageCorner.Parent = imageFrame
+
+	-- Image
+	local image = Instance.new("ImageLabel")
+	image.Size = UDim2.new(1, 0, 1, 0)
+	image.BackgroundTransparency = 1
+	image.Image = imageId or "rbxasset://textures/ui/GuiImagePlaceholder.png"
+	image.ScaleType = Enum.ScaleType.Fit
+	image.Parent = imageFrame
+
+	local imageCorner2 = Instance.new("UICorner")
+	imageCorner2.CornerRadius = UDim.new(1, 0)
+	imageCorner2.Parent = image
+
+	-- Select button
+	local selectButton = Instance.new("TextButton")
+	selectButton.Name = "SelectButton"
+	selectButton.Size = UDim2.new(0, 180, 0, 40)
+	selectButton.Position = UDim2.new(0.5, -90, 1, -50)
+	selectButton.BackgroundColor3 = Color3.fromRGB(41, 171, 226)
+	selectButton.BorderSizePixel = 0
+	selectButton.Font = Enum.Font.GothamBold
+	selectButton.Text = "Select"
+	selectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	selectButton.TextSize = 20
+	selectButton.Parent = card
+
+	local buttonCorner = Instance.new("UICorner")
+	buttonCorner.CornerRadius = UDim.new(0, 8)
+	buttonCorner.Parent = selectButton
+
+	-- Button animation
+	local tweenService = game:GetService("TweenService")
+	local hoverTween = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	selectButton.MouseEnter:Connect(function()
+		tweenService:Create(selectButton, hoverTween, {BackgroundColor3 = Color3.fromRGB(79, 195, 247)}):Play()
+	end)
+
+	selectButton.MouseLeave:Connect(function()
+		tweenService:Create(selectButton, hoverTween, {BackgroundColor3 = Color3.fromRGB(41, 171, 226)}):Play()
+	end)
+
+	selectButton.MouseButton1Click:Connect(function()
+		print("Selected team: " .. teamText)
+
+		-- Fire remote event to server to assign team
+		teamEvent:FireServer(teamName)
+
+		-- Hide team selection and close GUI
+		teamFrame.Visible = false
+		blur:Destroy()
+		screenGui:Destroy()
+	end)
+
+	return card
+end
+
+-- Function to create a menu button
+local function createButton(name, position, text)
+	-- Main button frame
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Size = UDim2.new(0, 280, 0, 70)
+	button.Position = position
+	button.BackgroundColor3 = Color3.fromRGB(41, 171, 226)
+	button.BorderSizePixel = 0
+	button.AutoButtonColor = false
+	button.Font = Enum.Font.GothamBold
+	button.Text = text
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.TextSize = 32
+	button.TextStrokeTransparency = 0.5
+	button.Parent = menuFrame
+
+	-- Rounded corners
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 15)
+	corner.Parent = button
+
+	-- Gradient effect
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(79, 195, 247)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(2, 136, 209))
+	}
+	gradient.Rotation = 90
+	gradient.Parent = button
+
+	-- Top shine effect
+	local shine = Instance.new("Frame")
+	shine.Name = "Shine"
+	shine.Size = UDim2.new(1, 0, 0.4, 0)
+	shine.Position = UDim2.new(0, 0, 0, 0)
+	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	shine.BackgroundTransparency = 0.7
+	shine.BorderSizePixel = 0
+	shine.Parent = button
+
+	local shineCorner = Instance.new("UICorner")
+	shineCorner.CornerRadius = UDim.new(0, 15)
+	shineCorner.Parent = shine
+
+	-- Dotted pattern overlay
+	local pattern = Instance.new("Frame")
+	pattern.Name = "Pattern"
+	pattern.Size = UDim2.new(1, 0, 1, 0)
+	pattern.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	pattern.BackgroundTransparency = 0.85
+	pattern.BorderSizePixel = 0
+	pattern.Parent = button
+
+	local patternCorner = Instance.new("UICorner")
+	patternCorner.CornerRadius = UDim.new(0, 15)
+	patternCorner.Parent = pattern
+
+	-- Shadow effect
+	local shadow = Instance.new("Frame")
+	shadow.Name = "Shadow"
+	shadow.Size = UDim2.new(1, 0, 0.15, 0)
+	shadow.Position = UDim2.new(0, 0, 1, 0)
+	shadow.BackgroundColor3 = Color3.fromRGB(1, 87, 155)
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = button.ZIndex - 1
+	shadow.Parent = button
+
+	local shadowCorner = Instance.new("UICorner")
+	shadowCorner.CornerRadius = UDim.new(0, 15)
+	shadowCorner.Parent = shadow
+
+	-- Button animations
+	local tweenService = game:GetService("TweenService")
+	local hoverTween = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local clickTween = TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	button.MouseEnter:Connect(function()
+		tweenService:Create(button, hoverTween, {Position = position + UDim2.new(0, 0, 0, -4)}):Play()
+	end)
+
+	button.MouseLeave:Connect(function()
+		tweenService:Create(button, hoverTween, {Position = position}):Play()
+	end)
+
+	button.MouseButton1Down:Connect(function()
+		tweenService:Create(button, clickTween, {Position = position + UDim2.new(0, 0, 0, 4)}):Play()
+	end)
+
+	button.MouseButton1Up:Connect(function()
+		tweenService:Create(button, clickTween, {Position = position}):Play()
+	end)
+
+	return button
+end
+
+-- Create main menu buttons
+local playButton = createButton("PlayButton", UDim2.new(0, 0, 0, 0), "Play")
+local infoButton = createButton("InfoButton", UDim2.new(0, 0, 0, 90), "Info")
+local storeButton = createButton("StoreButton", UDim2.new(0, 0, 0, 180), "Store")
+
+-- Create team cards in order (LayoutOrder determines position)
+-- Start role for everyone newly added
+createTeamCard("VisitorCard", "Visitor", "Visitor", "rbxassetid://YOUR_IMAGE_ID", 1)
+-- Low Ranks (LR) - Order 1-5
+createTeamCard("CheckinCard", "[LR] Check-in-Staff", "Check-in-Staff", "rbxassetid://YOUR_IMAGE_ID", 1)
+createTeamCard("GroundCrewCard", "[LR] Ground Crew", "Ground Crew", "rbxassetid://YOUR_IMAGE_ID", 2)
+createTeamCard("CabinCrewCard", "[LR] Cabin Crew", "Cabin Crew", "rbxassetid://YOUR_IMAGE_ID", 3)
+createTeamCard("FirstOfficerCard", "[LR] First Officer", "First Officer", "rbxassetid://YOUR_IMAGE_ID", 4)
+createTeamCard("CaptainCard", "[LR] Captain", "Captain", "rbxassetid://YOUR_IMAGE_ID", 5)
+
+-- Middle Ranks (MR) - Order 6-11
+createTeamCard("SeniorStaffCard", "[MR] Senior Staff", "Senior Staff", "rbxassetid://YOUR_IMAGE_ID", 6)
+createTeamCard("StaffSupervisorCard", "[MR] Staff Supervisor", "Staff Supervisor", "rbxassetid://YOUR_IMAGE_ID", 7)
+createTeamCard("StaffLeaderCard", "[MR] Staff Leader", "Staff Leader", "rbxassetid://YOUR_IMAGE_ID", 8)
+createTeamCard("StaffManagerCard", "[MR] Staff Manager", "Staff Manager", "rbxassetid://YOUR_IMAGE_ID", 9)
+createTeamCard("AirportSupervisorCard", "[MR] Airport Supervisor", "Airport Supervisor", "rbxassetid://YOUR_IMAGE_ID", 10)
+createTeamCard("AirportManagerCard", "[MR] Airport Manager", "Airport Manager", "rbxassetid://YOUR_IMAGE_ID", 11)
+
+-- High Ranks (HR) - Order 12-15
+createTeamCard("BODCard", "[HR] Board Of Director", "Board Of Director", "rbxassetid://YOUR_IMAGE_ID", 12)
+createTeamCard("CoOwnerCard", "[HR] Co-Owner", "Co-Owner", "rbxassetid://YOUR_IMAGE_ID", 13)
+createTeamCard("VicePresidentCard", "[HR] Vice President", "Vice President", "rbxassetid://YOUR_IMAGE_ID", 14)
+createTeamCard("PresidentCard", "[HR] President", "President", "rbxassetid://YOUR_IMAGE_ID", 15)
+
+-- Restricted Ranks (Only for authorized users) - Order 16-17
+if authorizedUsers[player.Name] then
+	createTeamCard("ModerationCard", "[M] Moderation", "Moderation", "rbxassetid://YOUR_IMAGE_ID", 16)
+	createTeamCard("SeniorManagementCard", "[SHR] Senior Management", "Senior Management", "rbxassetid://YOUR_IMAGE_ID", 17)
+end
+
+-- Button click handlers
+playButton.MouseButton1Click:Connect(function()
+	print("Play button clicked!")
+	-- Hide all menu buttons
+	playButton.Visible = false
+	infoButton.Visible = false
+	storeButton.Visible = false
+	menuFrame.Visible = false
+	-- Show team selection
+	teamFrame.Visible = true
+end)
+
+infoButton.MouseButton1Click:Connect(function()
+	print("Info button clicked!")
+	-- Add your info button functionality here
+end)
+
+storeButton.MouseButton1Click:Connect(function()
+	print("Store button clicked!")
+	-- Add your store button functionality here
+end)
