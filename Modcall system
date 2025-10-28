@@ -1,0 +1,52 @@
+-- ServerScriptService/ModCallScript
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+
+local webhookURL = "" -- Put your working webhook here
+
+local function sendModCall(player, reason)
+	print("===== Mod Call Triggered =====")
+	print("Player:", player.Name)
+	print("Reason:", reason)
+	print("Server Link: https://www.roblox.com/games/" .. game.PlaceId .. "?privateServerId=" .. game.JobId)
+	print("==============================")
+
+	local data = {
+		["content"] = "",
+		["embeds"] = {{
+			["title"] = "🛡️ Mod Call",
+			["color"] = 16711680, -- Red
+			["fields"] = {
+				{["name"] = "Player", ["value"] = player.Name, ["inline"] = true},
+				{["name"] = "Reason", ["value"] = reason, ["inline"] = false},
+				{["name"] = "Server Link", ["value"] = "https://www.roblox.com/games/" .. game.PlaceId .. "?privateServerId=" .. game.JobId, ["inline"] = false}
+			}
+		}}
+	}
+
+	local jsonData = HttpService:JSONEncode(data)
+	local success, err = pcall(function()
+		HttpService:PostAsync(webhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
+	end)
+
+	if success then
+		print("✅ Mod call sent to Discord successfully!")
+	else
+		warn("❌ Failed to send mod call to Discord:", err)
+	end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	print(player.Name .. " joined!") -- Debug
+
+	player.Chatted:Connect(function(message)
+		print("Message received from " .. player.Name .. ": " .. message) -- Debug
+
+		local command, rest = message:match("^(%S+)%s*(.*)")
+		if command and command:lower() == "!modcall" then
+			local reason = rest
+			if reason == "" then reason = "No reason provided" end
+			sendModCall(player, reason)
+		end
+	end)
+end)
